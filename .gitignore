@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+
+*.csv
+stream
+stream_pcm
+stream_mpi_c
+stream_mpi_pcm
