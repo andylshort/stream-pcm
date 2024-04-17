@@ -245,6 +245,8 @@ extern int omp_get_num_threads();
 extern void pcm_init();
 extern void pcm_start();
 extern void pcm_stop();
+extern void pcm_measure_start();
+extern void pcm_measure_end();
 #endif
 int
 main()
@@ -502,13 +504,13 @@ main()
 		times[2][k] = t1-t0;
 	
 		// kernel 4: Triad
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 #ifdef USE_PCM
         if (myrank == 0) {
             pcm_start();
         }
 #endif
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TUNED
         tuned_STREAM_Triad(scalar);
 #else
@@ -523,6 +525,17 @@ main()
         if (myrank == 0) {
             pcm_stop();
         }
+#endif
+#ifdef TEST_PCM_MPI_BARRIER
+#ifdef USE_PCM
+        if (myrank == 0)
+            pcm_measure_start();
+#endif
+        MPI_Barrier(MPI_COMM_WORLD);
+#ifdef USE_PCM
+        if (myrank == 0)
+            pcm_measure_end();
+#endif
 #endif
 	}
 
