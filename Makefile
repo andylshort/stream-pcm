@@ -9,6 +9,10 @@ CFLAGS = $(FLAGS)
 FC = ifx
 FFLAGS = $(FLAGS)
 
+ifdef TEST_PCM_MPI_BARRIER
+	FLAGS += -DTEST_PCM_MPI_BARRIER
+endif
+
 
 PCM_LINK_FLAGS = -ldl -Wl,-rpath=pcm/build/lib -Lpcm/build/lib -lpcm -lstdc++ \
 	-DUSE_PCM -DPCM_DYNAMIC_LIB
