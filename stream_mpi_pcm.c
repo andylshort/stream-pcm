@@ -458,6 +458,16 @@ main()
 	// MPI_Barrier(), when it should have been *before* the MPI_Barrier().
     // 
 
+#ifdef USE_PCM
+    /*
+    if (myrank == 0)
+        pcm_measure_start();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (myrank == 0)
+        pcm_measure_end();
+        */
+#endif
+
     scalar = SCALAR;
     for (k=0; k<NTIMES; k++)
 	{
@@ -525,17 +535,6 @@ main()
         if (myrank == 0) {
             pcm_stop();
         }
-#endif
-#ifdef TEST_PCM_MPI_BARRIER
-#ifdef USE_PCM
-        if (myrank == 0)
-            pcm_measure_start();
-#endif
-        MPI_Barrier(MPI_COMM_WORLD);
-#ifdef USE_PCM
-        if (myrank == 0)
-            pcm_measure_end();
-#endif
 #endif
 	}
 

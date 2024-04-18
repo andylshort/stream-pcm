@@ -12,11 +12,11 @@
 
 using namespace pcm;
 
+extern "C" {
 static std::ofstream csv_file;
 static int iteration;
 static PCM* m;
 
-extern "C" {
     typedef struct {
         uint64 bytesRead;
         uint64 bytesWritten;
@@ -25,12 +25,9 @@ extern "C" {
         double l2CacheHitRatio;
         double l3CacheHitRatio;
     } pcm_result;
-}
 
-extern "C" {
-    SystemCounterState sysBefore, sysAfter;
-    std::vector<CoreCounterState> coreBefore, coreAfter;
-    std::vector<SocketCounterState> globalDummySocketStates;
+    static SystemCounterState sysBefore, sysAfter;
+    static std::vector<CoreCounterState> coreBefore, coreAfter;
 
     void pcm_init()
     {
@@ -58,11 +55,13 @@ extern "C" {
 
     void pcm_start()
     {
+    std::vector<SocketCounterState> globalDummySocketStates;
         m->getAllCounterStates(sysBefore, globalDummySocketStates, coreBefore);
     }
 
     void pcm_stop()
     {
+    std::vector<SocketCounterState> globalDummySocketStates;
         m->getAllCounterStates(sysAfter, globalDummySocketStates, coreAfter);
 
         pcm_result current_result;
@@ -73,7 +72,6 @@ extern "C" {
         current_result.l2CacheHitRatio = getL2CacheHitRatio(sysBefore, sysAfter);
         current_result.l3CacheHitRatio = getL3CacheHitRatio(sysBefore, sysAfter);
 
-        /*
         std::cout << "Bytes Read: " << current_result.bytesRead << "\n";
         std::cout << "Bytes Written: " << current_result.bytesWritten << "\n";
         printf("IPC: %f\n", current_result.ipc);
@@ -91,7 +89,6 @@ extern "C" {
         csv_file << current_result.l3CacheHitRatio;
         csv_file << "\n";
         csv_file.close();
-        */
     }
 
     void pcm_measure_start()
@@ -102,8 +99,9 @@ extern "C" {
     void pcm_measure_end()
     {
         sysAfter = m->getSystemCounterState();
-        std::cout << "Read:    " << getBytesReadFromMC(sysBefore, sysAfter) << "\n";
-        std::cout << "Written: " << getBytesWrittenToMC(sysBefore, sysAfter) << "\n";
+
+        std::cout << "Barrier read: " << getBytesReadFromMC(sysBefore, sysAfter) << "\n";
+        std::cout << "Barrier write: " << getBytesWrittenToMC(sysBefore, sysAfter) << "\n";
     }
 }
 #endif
