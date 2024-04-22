@@ -1,6 +1,4 @@
-# set STREAMING_STORES to never, auto, or always depending on if want streaming stores
-STREAMING_STORES = never
-FLAGS = -O3 -qopenmp -DTUNED -DSTREAM_ARRAY_SIZE=112000000 -DNTIMES=100 -mcmodel=medium -xSAPPHIRERAPIDS -qopt-streaming-stores=$(STREAMING_STORES)
+FLAGS = -O3 -DTUNED -DSTREAM_ARRAY_SIZE=112000000 -DNTIMES=100 -mcmodel=medium -xSAPPHIRERAPIDS
 
 CC = icx
 MPI_CC = mpiicx
@@ -14,8 +12,7 @@ ifdef TEST_PCM_MPI_BARRIER
 endif
 
 
-PCM_LINK_FLAGS = -ldl -Wl,-rpath=pcm/build/lib -Lpcm/build/lib -lpcm -lstdc++ \
-	-DUSE_PCM -DPCM_DYNAMIC_LIB
+PCM_LINK_FLAGS = -Wl,-rpath=pcm/build/lib -Lpcm/build/lib -lpcm -DUSE_PCM
 
 all: stream_f stream_c
 
@@ -30,17 +27,19 @@ stream_mpi_c: stream_mpi.c
 	$(MPI_CC) $(CFLAGS) stream_mpi.c -o $@
 
 stream_pcm: stream_pcm.c pcm.o
-	$(CC) $(CFLAGS) stream_pcm.c pcm.o -o $@ $(PCM_LINK_FLAGS)
+	$(CC) $(CFLAGS) stream_pcm.c pcm.o -o $@ $(PCM_LINK_FLAGS) -lstdc++
 
 stream_mpi_pcm: stream_mpi_pcm.c pcm.o
-	$(MPI_CC) $(CFLAGS) stream_mpi_pcm.c pcm.o -o $@ $(PCM_LINK_FLAGS)
+	$(MPI_CC) $(CFLAGS) -qopt-streaming-stores=always stream_mpi_pcm.c pcm.o -o $@ $(PCM_LINK_FLAGS) -lstdc++
+
+stream_mpi_pcm_ns: stream_mpi_pcm.c pcm.o
+	$(MPI_CC) $(CFLAGS) -qno-opt-streaming-stores stream_mpi_pcm.c pcm.o -o $@ $(PCM_LINK_FLAGS) -lstdc++
 
 mysecond.o: mysecond.c
 	$(CC) $(CFLAGS) -c $^
 
 pcm.o: pcm.cpp
-	icpx -O3 \
-	-DUSE_PCM -DPCM_DYNAMIC_LIB \
+	icpx -O3 -DUSE_PCM \
 	-c pcm.cpp -fPIC -o pcm.o \
 	-Ipcm/src \
 	$(PCM_LINK_FLAGS)

@@ -214,7 +214,12 @@
 //			c[STREAM_ARRAY_SIZE+OFFSET];
 
 // Some compilers require an extra keyword to recognize the "restrict" qualifier.
-double * restrict a, * restrict b, * restrict c;
+__attribute__((align_value(64)))
+double* restrict a;
+__attribute__((align_value(64)))
+double* restrict b;
+__attribute__((align_value(64)))
+double* restrict c;
 
 size_t		array_elements, array_bytes, array_alignment;
 static double	avgtime[4] = {0}, maxtime[4] = {0},
@@ -245,8 +250,6 @@ extern int omp_get_num_threads();
 extern void pcm_init();
 extern void pcm_start();
 extern void pcm_stop();
-extern void pcm_measure_start();
-extern void pcm_measure_end();
 #endif
 int
 main()
@@ -459,13 +462,9 @@ main()
     // 
 
 #ifdef USE_PCM
-    /*
-    if (myrank == 0)
-        pcm_measure_start();
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (myrank == 0)
-        pcm_measure_end();
-        */
+        if (myrank == 0) {
+            pcm_start();
+        }
 #endif
 
     scalar = SCALAR;
@@ -516,11 +515,6 @@ main()
 		// kernel 4: Triad
 		t0 = MPI_Wtime();
 		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef USE_PCM
-        if (myrank == 0) {
-            pcm_start();
-        }
-#endif
 #ifdef TUNED
         tuned_STREAM_Triad(scalar);
 #else
@@ -531,12 +525,12 @@ main()
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
 		times[3][k] = t1-t0;
+	}
 #ifdef USE_PCM
         if (myrank == 0) {
             pcm_stop();
         }
 #endif
-	}
 
 	t0 = MPI_Wtime();
 

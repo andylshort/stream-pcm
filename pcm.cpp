@@ -1,4 +1,3 @@
-#include <dlfcn.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,10 +12,6 @@
 using namespace pcm;
 
 extern "C" {
-static std::ofstream csv_file;
-static int iteration;
-static PCM* m;
-
     typedef struct {
         uint64 bytesRead;
         uint64 bytesWritten;
@@ -25,6 +20,10 @@ static PCM* m;
         double l2CacheHitRatio;
         double l3CacheHitRatio;
     } pcm_result;
+
+    static std::ofstream csv_file;
+    static int iteration;
+    static PCM* m;
 
     static SystemCounterState sysBefore, sysAfter;
     static std::vector<CoreCounterState> coreBefore, coreAfter;
@@ -43,25 +42,17 @@ static PCM* m;
         csv_file.close();
 
         iteration = 0;
-
-        //globalConf.fixedCfg = NULL; // default
-        //globalConf.nGPCounters = m->getMaxCustomCoreEvents();
-        //globalConf.gpCounterCfg = globalRegs;
-        //globalConf.OffcoreResponseMsrValue[0] = events[0].msr_value;
-        //globalConf.OffcoreResponseMsrValue[1] = events[1].msr_value;
-
-        //m->resetPMU();
     }
 
     void pcm_start()
     {
-    std::vector<SocketCounterState> globalDummySocketStates;
+        std::vector<SocketCounterState> globalDummySocketStates;
         m->getAllCounterStates(sysBefore, globalDummySocketStates, coreBefore);
     }
 
     void pcm_stop()
     {
-    std::vector<SocketCounterState> globalDummySocketStates;
+        std::vector<SocketCounterState> globalDummySocketStates;
         m->getAllCounterStates(sysAfter, globalDummySocketStates, coreAfter);
 
         pcm_result current_result;
@@ -72,8 +63,8 @@ static PCM* m;
         current_result.l2CacheHitRatio = getL2CacheHitRatio(sysBefore, sysAfter);
         current_result.l3CacheHitRatio = getL3CacheHitRatio(sysBefore, sysAfter);
 
-        std::cout << "Bytes Read: " << current_result.bytesRead << "\n";
-        std::cout << "Bytes Written: " << current_result.bytesWritten << "\n";
+        std::cout << "Bytes Read: " << current_result.bytesRead / 100 << "\n";
+        std::cout << "Bytes Written: " << current_result.bytesWritten / 100 << "\n";
         printf("IPC: %f\n", current_result.ipc);
         std::cout << "Cycles: " << current_result.cycles << "\n";
         printf("L2 cache hit ratio: %f\n", current_result.l2CacheHitRatio);
@@ -89,19 +80,6 @@ static PCM* m;
         csv_file << current_result.l3CacheHitRatio;
         csv_file << "\n";
         csv_file.close();
-    }
-
-    void pcm_measure_start()
-    {
-        sysBefore = m->getSystemCounterState();
-    }
-
-    void pcm_measure_end()
-    {
-        sysAfter = m->getSystemCounterState();
-
-        std::cout << "Barrier read: " << getBytesReadFromMC(sysBefore, sysAfter) << "\n";
-        std::cout << "Barrier write: " << getBytesWrittenToMC(sysBefore, sysAfter) << "\n";
     }
 }
 #endif
